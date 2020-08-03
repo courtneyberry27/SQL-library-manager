@@ -1,0 +1,26 @@
+{
+  "name": "sql_library_manager-v1",
+  "version": "1.0.0",
+  "description": "library of books in database",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/courtneyberry27/SQL-library-manager.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/courtneyberry27/SQL-library-manager/issues"
+  },
+  "homepage": "https://github.com/courtneyberry27/SQL-library-manager#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "pug": "^2.0.4",
+    "sequelize": "^6.3.4",
+    "sqlite3": "^5.0.0"
+  }
+}
