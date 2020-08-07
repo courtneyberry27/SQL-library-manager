@@ -2,9 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const routes = require('./routes/index');
 const books = require('./routes/books');
-const error404 = require('./middleware/error404');
 const { sequelize } = require('./db/index');
 const otherErrors = require('./middleware/otherErrors');
+const error404 = require('./middleware/error404');
 
 //create port number
 const port = process.env.PORT || 3000;
@@ -28,7 +28,11 @@ app.use('/books', books);
 
 //errors
 app.use(otherErrors);
-app.use('/', error404);
+
+//404
+app.use('/error404', error404);
+
+
 
 //set up port listener and sync
 sequelize.sync()

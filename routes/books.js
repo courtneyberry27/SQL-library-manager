@@ -4,11 +4,12 @@ const { Book } = require('../db/index').models;
 const book = require('../db/models/book');
 const Sequelize = require('sequelize');
 const { sequelize } = require('../db');
+const errorHandler = require('../middleware/otherErrors');
 const Op = Sequelize.Op;
 
-/******************
- * HANDLER FUNCTION
-*******************/
+/***************************
+ * ASYNC HANDLER FUNCTION
+****************************/
 function asyncHandler(cb){
   return async(req, res, next) => {
     try {
@@ -17,7 +18,7 @@ function asyncHandler(cb){
       next(error);
     }
   }
-}
+};
 
 /*********************
  * SETS UP SERVER
@@ -137,8 +138,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
         const title = book.title;
         res.render('update-book', { book, title });
     } else {
-        res.status(404);
-        res.render('page-not-found');
+      errorHandler(error, req, res, next);
     }
 }));
 
@@ -163,8 +163,7 @@ router.post('/:id', asyncHandler(async (req, res) => {
         }
       }
     } else {
-      res.status(404);
-      res.render('page-not-found');
+      errorHandler(error, req, res, next);
     }
 }));
 
@@ -177,8 +176,7 @@ router.post('/:id/delete', asyncHandler(async (req, res) => {
       book.destroy();
       res.redirect('/');
     } else {
-      res.status(404);
-      res.render('page-not-found');
+      errorHandler(error, req, res, next);
     }
   }));
   
