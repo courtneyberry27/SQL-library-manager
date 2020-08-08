@@ -4,33 +4,42 @@ const { Book } = require('../db/index').models;
 const book = require('../db/models/book');
 const Sequelize = require('sequelize');
 const { sequelize } = require('../db');
-const errorHandler = require('../middleware/otherErrors');
-const Op = Sequelize.Op;
 
 /***************************
  * ASYNC HANDLER FUNCTION
-****************************/
-function asyncHandler(cb){
-  return async(req, res, next) => {
-    try {
-      await cb(req, res, next)
-    } catch(error){
-      next(error);
+ ****************************/
+function asyncHandler(cb) {
+    return async(req, res, next) => {
+        try {
+            await cb(req, res, next)
+        } catch (error) {
+            next(error);
+        }
     }
-  }
 };
+
+/***************************
+ * ERROR HANDLER
+ ****************************/
+const errorHandler = router.get('/error', (req, res, next) => {
+    const err = new Error();
+    err.message = 'Custom 500 error thrown';
+    err.status = 500;
+    res.render('error');
+    throw err;
+});
 
 /*********************
  * SETS UP SERVER
-**********************/
+ **********************/
 //GET MAIN PAGE
-router.get('/', asyncHandler(async (req, res, next) => {
-  res.redirect('/books/page/1');
+router.get('/', asyncHandler(async(req, res, next) => {
+    res.redirect('/books/page/1');
 }));
 
 //GET NEW BOOK 
-router.get('/new', asyncHandler(async (req, res) => {
-  res.render('new-book', {book: {}, title: "New Book"});
+router.get('/new', asyncHandler(async(req, res) => {
+    res.render('new-book', { book: {}, title: "New Book" });
 }));
 
 //POST NEW BOOK 
@@ -39,13 +48,13 @@ router.post('/new', asyncHandler(async(req, res) => {
 
     try {
         book = await Book.create({
-          title: req.body.title,
-          author: req.body.author,
-          genre: req.body.genre,
-          year: req.body.year
+            title: req.body.title,
+            author: req.body.author,
+            genre: req.body.genre,
+            year: req.body.year
         });
         res.redirect('/');
-    } catch(error) {
+    } catch (error) {
         if (error.name === 'SequelizeValidationError') {
             const errors = error.errors;
             const messages = errors.map(err => err.message);
@@ -59,78 +68,80 @@ router.post('/new', asyncHandler(async(req, res) => {
 }));
 
 //SEARCH FEATURE
-router.post('/search', asyncHandler(async (req, res) => {
-  const search = req.body.search;
-  if (search) {
-    const books = []
-    let notAllBooksFound;
-    let results;
+router.post('/search', asyncHandler(async(req, res) => {
+    const search = req.body.search;
+    if (search) {
+        const books = []
+        let notAllBooksFound;
+        let results;
 
-    //SQL query for search
-    [ results ] = await sequelize.query(
-      `SELECT * FROM books WHERE title LIKE "%${search}%" 
+        //SQL query for search
+        [results] = await sequelize.query(
+            `SELECT * FROM books WHERE title LIKE "%${search}%" 
         OR author LIKE "%${search}%" 
         OR genre LIKE "%${search}%";`
-    );
-    results.map(book => books.push(book));
-    
-    //year search
-    if (!isNaN(search)) {
-      [ results ] = await sequelize.query(`SELECT * FROM books WHERE year = ${search}`);
-      results.map(book => books.push(book));
-    }
-   
-    if (books.length === 0) {
-      return res.render('none-found')
-    }
+        );
+        results.map(book => books.push(book));
 
-    //to use later for including show all books button
-    if (books.length !== (await Book.findAll()).length) notAllBooksFound = true;
-    res.render('index', {books, title: "Books", notAllBooksFound});
-  } else {
-    res.redirect('/');
-  }
+        //year search
+        if (!isNaN(search)) {
+            [results] = await sequelize.query(`SELECT * FROM books WHERE year = ${search}`);
+            results.map(book => books.push(book));
+        }
+
+        if (books.length === 0) {
+            return res.render('none-found')
+        }
+
+        //to use later for including show all books button
+        if (books.length !== (await Book.findAll()).length) notAllBooksFound = true;
+        res.render('index', { books, title: "Books", notAllBooksFound });
+    } else {
+        res.redirect('/');
+    }
 }));
 
 //GET PAGE ROUTE
-router.get('/page', asyncHandler(async (req, res) => {
-  res.redirect('/');
+router.get('/page', asyncHandler(async(req, res) => {
+    res.redirect('/');
 }));
 
 //GET PAGE LIMIT/ PAGINATION SECTION
-router.get('/page/:page', asyncHandler(async (req, res, next) => {
-  const page = req.params.page;
-  const limit = 12;
-  const numberOfPages = Math.ceil((await Book.count()) / limit)
-  
-  // if page value is valid
-  if (!isNaN(page) && page >= 1 && page <= numberOfPages) {
-    let pagesIndexes = [];
-    const offset = (page - 1) * limit;
-    const books = await Book.findAll({
-      limit, 
-      offset,
-      order: [['createdAt', 'DESC']],
-    });
-    
-    //if pages more than 0
-    if (books.length > 0) {
-      for (let i = 0; i < numberOfPages; i++) {
-        pagesIndexes.push(i + 1);
-      }
-      return res.render('index', {books, pagesIndexes, title: "Books"});
-    } else {
-      return res.render('none-found');
-    }
+router.get('/page/:page', asyncHandler(async(req, res, next) => {
+    const page = req.params.page;
+    const limit = 12;
+    const numberOfPages = Math.ceil((await Book.count()) / limit)
 
-  } else {
-    res.status(404);
-    res.render('page-not-found');
-  }
+    // if page value is valid
+    if (!isNaN(page) && page >= 1 && page <= numberOfPages) {
+        let pagesIndexes = [];
+        const offset = (page - 1) * limit;
+        const books = await Book.findAll({
+            limit,
+            offset,
+            order: [
+                ['createdAt', 'DESC']
+            ],
+        });
+
+        //if pages more than 0
+        if (books.length > 0) {
+            for (let i = 0; i < numberOfPages; i++) {
+                pagesIndexes.push(i + 1);
+            }
+            return res.render('index', { books, pagesIndexes, title: "Books" });
+        } else {
+            return res.render('none-found');
+        }
+
+    } else {
+        res.status(404);
+        res.render('page-not-found');
+    }
 }));
 
 //GET BOOK FORM
-router.get('/:id', asyncHandler(async (req, res) => {
+router.get('/:id', asyncHandler(async(req, res) => {
     const book = await Book.findByPk(req.params.id);
 
     //shows book details when clicked
@@ -138,46 +149,46 @@ router.get('/:id', asyncHandler(async (req, res) => {
         const title = book.title;
         res.render('update-book', { book, title });
     } else {
-      errorHandler(error, req, res, next);
+        errorHandler(err, req, res, next);
     }
 }));
 
 //POST UPDATE BOOK 
-router.post('/:id', asyncHandler(async (req, res) => {
+router.post('/:id', asyncHandler(async(req, res) => {
     let book;
     book = await Book.findByPk(req.params.id);
 
     if (book) {
 
-      try {
-        await book.update(req.body);
-        res.redirect('/');
-      } catch(error) {
+        try {
+            await book.update(req.body);
+            res.redirect('/');
+        } catch (error) {
 
-        if (error.name === 'SequelizeValidationError') {
-          const errors = error.errors;
-          const errorMsg = errors.map(error => error.message);
-          res.render('update-book', {book, validationErrors: errorMsg});
-        } else {
-          throw error;
+            if (error.name === 'SequelizeValidationError') {
+                const errors = error.errors;
+                const errorMsg = errors.map(error => error.message);
+                res.render('update-book', { book, validationErrors: errorMsg });
+            } else {
+                throw error;
+            }
         }
-      }
     } else {
-      errorHandler(error, req, res, next);
+        errorHandler(error, req, res, next);
     }
 }));
 
 
 //POST DELETE BOOK
-router.post('/:id/delete', asyncHandler(async (req, res) => {
+router.post('/:id/delete', asyncHandler(async(req, res) => {
     const book = await Book.findByPk(req.params.id);
 
     if (book) {
-      book.destroy();
-      res.redirect('/');
+        book.destroy();
+        res.redirect('/');
     } else {
-      errorHandler(error, req, res, next);
+        errorHandler(error, req, res, next);
     }
-  }));
-  
-  module.exports = router;
+}));
+
+module.exports = router;
